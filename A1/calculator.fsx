@@ -74,6 +74,8 @@ let rec eval (vtab : SymTab) (e : EXP) : VALUE =
             sum n1 (INT init)
 
         | RMAX ->
+          let n1 = eval vtab e1
+          let n2 = eval vtab e2
           if n1 > n2 then failwith "upper bound on the range must be greater or equal to the lower bound"
           else
             let rec max x currentMax =
@@ -87,17 +89,21 @@ let rec eval (vtab : SymTab) (e : EXP) : VALUE =
             max n1 (INT -2147483648)
 
         | RARGMAX -> // TODO: rewrite function such that 
+          let n1 = eval vtab e1
+          let n2 = eval vtab e2
           if n1 > n2 then failwith "upper bound on the range must be greater or equal to the lower bound"
           else 
-            let rec argmax x max index =
-              if x > n2 then index
+            let rec argmax x max maxIndex =      // x = current num, max = max thus far, index = current index, maxIndex = maxIndex
+              if x > n2 then INT maxIndex
               else
+                let index =
+                  match (x, n1) with (INT x, INT n1) -> x-n1
                 let vtab1 = bind var x vtab
-                let (newMax, maxIndex) = 
+                let (newMax, newMaxIndex) =
                   match ((eval vtab1 e3), max) with
-                    | (INT r, INT cmax) -> if r > cmax then (INT r else INT cmax
-                argmax (match x with INT x -> INT (x+1)) newMax (index+1)
-            argmax n1 (INT 0) 0
+                    | (INT r, INT cMax) -> if r > cMax then (INT r, index) else (INT cMax, maxIndex)
+                argmax (match x with INT x -> INT (x+1)) newMax newMaxIndex
+            argmax n1 (INT -2147483648) 0
 
 (* YOU SHOULDN'T NEED TO MODIFY ANYTHING IN THE REMAINDER OF THIS FILE,
    BUT YOU ARE WELCOME TO LOOK AT IT. *)
