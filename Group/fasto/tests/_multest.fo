@@ -1,0 +1,4 @@
+fun int main() =
+  let n = read(int) in
+  let x = write(n*2) in
+  n*2
