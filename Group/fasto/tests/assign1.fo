@@ -21,4 +21,4 @@ fun int main() =
                                     , iota_arr) in
     let squares = map(fn int (int i) => mul(i, i), difs) in
     let result = reduce(plus, 0, squares) in
-    write(result)
+    write(result
