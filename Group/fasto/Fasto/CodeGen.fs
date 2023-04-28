@@ -244,8 +244,12 @@ let rec compileExp  (e      : TypedExp)
       let code2 = compileExp e2 vtable t2
       code1 @ code2 @ [MUL (place,t1,t2)]
 
-  | Divide (e1, e2, pos) ->
-      failwith "Unimplemented code generation of division"
+  | Divide (e1, e2, pos) ->    // added by Christian
+      let t1 = newReg "div_L"
+      let t2 = newReg "div_R"
+      let code1 = compileExp e1 vtable t1
+      let code2 = compileExp e2 vtable t2
+      code1 @ code2 @ [DIV (place,t1,t2)]
 
   | Not (e, pos) ->
       failwith "Unimplemented code generation of not"
