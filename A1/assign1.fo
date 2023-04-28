@@ -1,0 +1,24 @@
+fun int mul(int x, int y) =
+  if y == 0 then 0
+  else 
+    if 0 < y then x + mul(x, y-1)
+    else 0 - x + mul(x, y+1)
+
+fun int plus(int x, int y) =
+  x + y
+
+fun int main() =
+  let n = read(int) in
+  if n < 1 then 
+    let t = write("Incorrect Input!") in
+    0
+  else
+    let iota_arr = iota(n) in
+    let arr = map(fn int (int i) => read(int), iota_arr) in
+    let difs = map(fn int (int i) =>
+                                    if i == 0 then arr[0]
+                                    else arr[i] - arr[i-1] 
+                                    , iota_arr) in
+    let squares = map(fn int (int i) => mul(i, i), difs) in
+    let result = reduce(plus, 0, squares) in
+    write(result)

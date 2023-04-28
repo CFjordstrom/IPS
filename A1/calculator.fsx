@@ -74,9 +74,8 @@ let rec eval (vtab : SymTab) (e : EXP) : VALUE =
             sum n1 (INT init)
 
         | RMAX ->
-          let n1 = eval vtab e1
-          let n2 = eval vtab e2
-          if n1 > n2 then failwith "upper bound on the range must be greater or equal to the lower bound"
+          if n1 > n2 then 
+            failwith "upper bound must be greater or equal to lower bound"
           else
             let rec max x currentMax =
               if x > n2 then currentMax
@@ -88,12 +87,10 @@ let rec eval (vtab : SymTab) (e : EXP) : VALUE =
                 max (match x with INT x -> INT (x+1)) newMax
             max n1 (INT -2147483648)
 
-        | RARGMAX -> // TODO: rewrite function such that 
-          let n1 = eval vtab e1
-          let n2 = eval vtab e2
+        | RARGMAX ->
           if n1 > n2 then failwith "upper bound on the range must be greater or equal to the lower bound"
           else 
-            let rec argmax x max maxIndex =      // x = current num, max = max thus far, index = current index, maxIndex = maxIndex
+            let rec argmax x max maxIndex =
               if x > n2 then INT maxIndex
               else
                 let index =
@@ -274,20 +271,26 @@ let program2 = ("let x0 = 2 in \
 let program3 = "sum x = 1 to 4 of x*x"
 let program4 = "max x = 0 to 10 of 5 * x - x * x"
 let program5 = "argmax x = 0 to 10 of 5 * x - x * x"
+let program6 = "prod x = 1 to 5 of x"
 
 let eval_test_arithmetic = (run program0 = INT -4)
 let eval_test_let        = (run program1 = INT 7)
 let eval_test_nested_let = (run program2 = INT 256)
 let eval_test_sum        = (run program3 = INT 30)
-(*let eval_test_max        = (run program4 = INT 6)
-let eval_test_argmax     = (run program4 = INT 2)
-*)
+let eval_test_max        = (run program4 = INT 6)
+let eval_test_argmax     = (run program5 = INT 2)
+let eval_test_prod       = (run program6 = INT 120)
+
 printfn "test results:"
 printfn "  eval_test_constant = %b" eval_test_constant
 printfn "  eval_test_lookup = %b" eval_test_lookup
 printfn "  eval_test_arithmetic = %b" eval_test_arithmetic
 printfn "  eval_test_let = %b" eval_test_let
 printfn "  eval_test_nested_let = %b" eval_test_nested_let
+printfn "  eval_test_sum = %b" eval_test_sum
+printfn "  eval_test_max = %b" eval_test_max
+printfn "  eval_test_argmax = %b" eval_test_argmax
+printfn "  eval_test_prod = %b" eval_test_prod
 
 (* THIS FUNCTION CALLS RUN ON USER INPUT IN AN INTERACTIVE LOOP *)
 let interpreter () =
