@@ -119,6 +119,9 @@ let rec evalExp (e : UntypedExp, vtab : VarTable, ftab : FunTable) : Value =
   | StringLit(s, pos) ->
         let cvs = List.map (fun c -> CharVal c) (Seq.toList s)
         ArrayVal (cvs, Char)
+  | BoolLit(b, pos) ->
+        match b with
+        | "true" -> BoolVal true
   | Var(id, pos) ->
         let res = SymTab.lookup id vtab
         match res with
