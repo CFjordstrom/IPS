@@ -100,7 +100,6 @@ and checkExp  (ftab : FunTable)
     match exp with
     | Constant  (v, pos) -> (valueType v, Constant (v, pos))
     | StringLit (s, pos) -> (Array Char, StringLit (s, pos))
-    | BoolLit   (b, pos) -> (Bool, BoolLit (b, pos))
     | ArrayLit  ([], _, pos) -> reportOther "Impossible empty array" pos
     | ArrayLit  (exp::exps, _, pos) ->
       let (type_exp, exp_dec) = checkExp ftab vtab exp

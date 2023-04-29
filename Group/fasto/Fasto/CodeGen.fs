@@ -249,6 +249,10 @@ let rec compileExp  (e      : TypedExp)
       let t2 = newReg "div_R"
       let code1 = compileExp e1 vtable t1
       let code2 = compileExp e2 vtable t2
+      printfn "%A" t1
+      printfn "%A" t2
+      printfn "%A" code1
+      printfn "%A" code2
       code1 @ code2 @ [DIV (place,t1,t2)]
 
   | Not (e, pos) ->

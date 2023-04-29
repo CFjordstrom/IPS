@@ -38,7 +38,8 @@ let parse_error_rich =
 
 %token <int * Position> NUM
 %token <char * Position> CHARLIT
-%token <string * Position> ID STRINGLIT BOOLLIT // added by Christian
+%token <string * Position> ID STRINGLIT // added by Christian
+%token <bool * Position> BOOLLIT
 %token <Position> IF THEN ELSE LET IN EOF
 %token <Position> INT CHAR BOOL
 %token <Position> PLUS MINUS LESS
@@ -97,7 +98,7 @@ Exp : NUM            { Constant (IntVal (fst $1), snd $1) }
     | CHARLIT        { Constant (CharVal (fst $1), snd $1) }
     | ID             { Var $1 }
     | STRINGLIT      { StringLit $1 }
-    | BOOLLIT        { BoolLit $1}
+    | BOOLLIT        { Constant (BoolVal (fst $1), snd $1)}
     | LCURLY Exps RCURLY
                      { ArrayLit ($2, (), $1) }
     | Exp PLUS  Exp  { Plus ($1, $3, $2) }
