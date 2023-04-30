@@ -1,3 +1,0 @@
-fun bool main() =
-  let x = write(true == true) in
-  write(true == false)

@@ -251,11 +251,14 @@ let rec compileExp  (e      : TypedExp)
       let t2 = newReg "div_R"
       let code1 = compileExp e1 vtable t1
       let code2 = compileExp e2 vtable t2
-      match code2 with
-        | ((LI (r1, r2))::is) -> 
-            if r2 = 0 then raise (MyError("Division by zero", pos))
-        | _ -> printf ""
-      code1 @ code2 @ [DIV (place,t1,t2)]
+      let safe_lab = newLab "safe"
+      let check_not_zero = [ BNE (t2, Rzero, safe_lab)
+                           ; LI (Ra0, fst pos)
+                           ; LA (Ra1, "m.DivZero")
+                           ; J "p.RuntimeError"
+                           ; LABEL (safe_lab)
+                           ]
+      code1 @ code2 @ check_not_zero @ [DIV (place,t1,t2)]
 
   | Not (e, pos) ->       // Christian
       let t = newReg "not"
@@ -362,11 +365,45 @@ let rec compileExp  (e      : TypedExp)
         in `e1 || e2` if the execution of `e1` will evaluate to `true` then
         the code of `e2` must not be executed. Similarly for `And` (&&).
   *)
-  | And (_, _, _) ->
-      failwith "Unimplemented code generation of &&"
+  | And (e1, e2, pos) ->
+      let t1 = newReg "and_L"
+      let t2 = newReg "and_R"
+      let code1 = compileExp e1 vtable t1
+      let code2 = compileExp e2 vtable t2
 
-  | Or (_, _, _) ->
-      failwith "Unimplemented code generation of ||"
+      let end_lab = newLab "end"
+      let check_false =   [ LI (place, 0)             // set return = false
+                          ; BEQ (t1, Rzero, end_lab)  // if e1 == false then end
+                          ; LI (place, 1)             // e1 == true so return = true
+                          ]
+
+      let check_false2 =  [ BEQ (t2, place, end_lab)  // if e2 == true then end
+                          ; LI (place, 0)             // e2 == false so return = false
+                          ]
+      
+      let goto_end = [ LABEL end_lab ]
+
+      code1 @ check_false @ code2 @ check_false2 @ goto_end
+
+  | Or (e1, e2, pos) ->
+      let t1 = newReg "or_L"
+      let t2 = newReg "or_R"
+      let code1 = compileExp e1 vtable t1
+      let code2 = compileExp e2 vtable t2
+
+      let end_lab = newLab "end"
+      let check_true =  [ LI (place, 1)             // set return = true
+                        ; BEQ (t1, place, end_lab)  // if e1 == true then end
+                        ; LI (place, 0)             // e1 == false so return = false
+                        ]
+
+      let check_true2 = [ BEQ (t2, Rzero, end_lab)  // if e2 = false then end
+                        ; LI (place, 1) ]           // e2 == true so return = true
+
+      let goto_end = [ LABEL end_lab ]
+
+      code1 @ check_true @ code2 @ check_true2 @ goto_end
+
 
   (* Indexing:
      1. generate code to compute the index

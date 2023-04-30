@@ -38,12 +38,12 @@ let parse_error_rich =
 
 %token <int * Position> NUM
 %token <char * Position> CHARLIT
-%token <string * Position> ID STRINGLIT    // added by Christian
-%token <bool * Position> BOOLLIT
+%token <string * Position> ID STRINGLIT    // Christian
+%token <bool * Position> BOOLLIT           // Christian
 %token <Position> IF THEN ELSE LET IN EOF
 %token <Position> INT CHAR BOOL
 %token <Position> PLUS MINUS LESS
-%token <Position> MUL DIV                  // added by Christian
+%token <Position> MUL DIV                  // Christian
 %token <Position> NEG NOT                  // Christian
 %token <Position> AND
 %token <Position> OR
@@ -54,7 +54,7 @@ let parse_error_rich =
 %nonassoc ifprec letprec
 %left DEQ LTH
 %left PLUS MINUS
-%left MUL DIV                            // added by Christian
+%left MUL DIV                            // Christian
 %left AND OR                             // Christian
 
 %right NEG NOT                           // Christian - mby change?
@@ -94,6 +94,8 @@ Params : Type ID COMMA Params
                        { Param (fst $2, $1) :: $4 }
        | Type ID       { Param (fst $2, $1) :: [] }
 ;
+
+
 
 ///////////////////////////////////////////////////////
 // TODO: project tasks 1,2,4: 
