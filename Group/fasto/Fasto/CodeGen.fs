@@ -167,9 +167,11 @@ let rec compileExp  (e      : TypedExp)
   | Constant (IntVal n, pos) ->
       [ LI (place, n) ] (* assembler will generate appropriate
                            instruction sequence for any value n *)
-  | Constant (BoolVal p, _) ->
+  | Constant (BoolVal p, _) ->    // Christian
       (* TODO project task 1: represent `true`/`false` values as `1`/`0` *)
-      failwith "Unimplemented code generation of boolean constants"
+      match p with
+        | true -> [LI (place, 1)]
+        | false -> [LI (place, 0)]
   | Constant (CharVal c, pos) -> [ LI (place, int c) ]
 
   (* Create/return a label here, collect all string literals of the program
@@ -249,17 +251,22 @@ let rec compileExp  (e      : TypedExp)
       let t2 = newReg "div_R"
       let code1 = compileExp e1 vtable t1
       let code2 = compileExp e2 vtable t2
-      printfn "%A" t1
-      printfn "%A" t2
-      printfn "%A" code1
-      printfn "%A" code2
+      match code2 with
+        | ((LI (r1, r2))::is) -> 
+            if r2 = 0 then raise (MyError("Division by zero", pos))
+        | _ -> printf ""
       code1 @ code2 @ [DIV (place,t1,t2)]
 
-  | Not (e, pos) ->
-      failwith "Unimplemented code generation of not"
+  | Not (e, pos) ->       // Christian
+      let t = newReg "not"
+      let code = compileExp e vtable t
+      code @ [ XORI (place, t, 1)]
 
-  | Negate (e, pos) ->
-      failwith "Unimplemented code generation of negate"
+  | Negate (e, pos) ->    // Christian
+      let t = newReg "neg"
+      let code = compileExp e vtable t
+      code @ [ LI (place, 0)
+             ; SUB (place, place, t)]
 
   | Let (dec, e1, pos) ->
       let (code1, vtable1) = compileDec dec vtable

@@ -1,0 +1,5 @@
+fun bool main () =
+  let x = true in
+  let y = false in
+  let a = write(not x) in
+  write(not y)

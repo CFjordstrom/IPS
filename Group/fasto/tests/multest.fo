@@ -1,6 +1,6 @@
 fun int main() =
   let x = read(int) in
   let y = read(int) in
-  let a = write(x/y) in
-  let b = write(x/4) in
-  write(48/x)
+  let a = write(x*y) in
+  let b = write(x*3) in
+  write(5*x)

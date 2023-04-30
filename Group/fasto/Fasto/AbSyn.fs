@@ -99,7 +99,6 @@ type Param =
 type Exp<'T> =
     Constant  of Value * Position
   | StringLit of string * Position
-  //| BoolLit of Exp<'T> * Position
   | ArrayLit  of Exp<'T> list * 'T * Position
   | Var   of string * Position
   | Plus  of Exp<'T> * Exp<'T> * Position

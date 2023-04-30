@@ -81,8 +81,11 @@ rule Token = parse
                             Token lexbuf } (* newlines *)
   | "//" [^ '\n' '\012']* { Token lexbuf } (* comment *)
 
-  | "true"                { Parser.BOOLLIT(true, getPos lexbuf) }
-  | "false"               { Parser.BOOLLIT(false, getPos lexbuf)}
+  | "true"                { Parser.BOOLLIT(true, getPos lexbuf) } // Christian
+
+  | "false"               { Parser.BOOLLIT(false, getPos lexbuf)} // Christian
+
+  | "not"                 { Parser.NOT (getPos lexbuf) }    // Christian
 
   | '0' | ['1'-'9']['0'-'9']* { Parser.NUM
                                   ( int (Encoding.UTF8.GetString(lexbuf.Lexeme))
@@ -105,8 +108,11 @@ rule Token = parse
                           }
   | '+'                   { Parser.PLUS   (getPos lexbuf) }
   | '-'                   { Parser.MINUS  (getPos lexbuf) }
-  | '*'                   { Parser.MUL    (getPos lexbuf) }
-  | '/'                   { Parser.DIV    (getPos lexbuf) }
+  | '*'                   { Parser.MUL    (getPos lexbuf) }   // Christian
+  | '/'                   { Parser.DIV    (getPos lexbuf) }   // Christian
+  | '~'                   { Parser.NEG    (getPos lexbuf) }   // Christian
+  | "&&"                  { Parser.AND    (getPos lexbuf) }   // Christian
+  | "||"                  { Parser.OR     (getPos lexbuf) }   // Christian
   | "=>"                  { Parser.ARROW  (getPos lexbuf) }
   | "=="                  { Parser.DEQ    (getPos lexbuf) }
   | '='                   { Parser.EQ     (getPos lexbuf) }

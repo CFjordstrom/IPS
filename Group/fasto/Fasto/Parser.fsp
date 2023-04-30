@@ -38,12 +38,15 @@ let parse_error_rich =
 
 %token <int * Position> NUM
 %token <char * Position> CHARLIT
-%token <string * Position> ID STRINGLIT // added by Christian
+%token <string * Position> ID STRINGLIT    // added by Christian
 %token <bool * Position> BOOLLIT
 %token <Position> IF THEN ELSE LET IN EOF
 %token <Position> INT CHAR BOOL
 %token <Position> PLUS MINUS LESS
 %token <Position> MUL DIV                  // added by Christian
+%token <Position> NEG NOT                  // Christian
+%token <Position> AND
+%token <Position> OR
 %token <Position> DEQ LTH EQ MAP REDUCE IOTA ARROW
 %token <Position> FUN FN COMMA SEMICOLON READ WRITE
 %token <Position> LPAR RPAR LBRACKET RBRACKET LCURLY RCURLY
@@ -52,6 +55,9 @@ let parse_error_rich =
 %left DEQ LTH
 %left PLUS MINUS
 %left MUL DIV                            // added by Christian
+%left AND OR                             // Christian
+
+%right NEG NOT                           // Christian - mby change?
 
 %start Prog
 %type <AbSyn.UntypedProg> Prog
@@ -98,13 +104,17 @@ Exp : NUM            { Constant (IntVal (fst $1), snd $1) }
     | CHARLIT        { Constant (CharVal (fst $1), snd $1) }
     | ID             { Var $1 }
     | STRINGLIT      { StringLit $1 }
-    | BOOLLIT        { Constant (BoolVal (fst $1), snd $1)}
+    | BOOLLIT        { Constant (BoolVal (fst $1), snd $1)}     // Christian
     | LCURLY Exps RCURLY
                      { ArrayLit ($2, (), $1) }
     | Exp PLUS  Exp  { Plus ($1, $3, $2) }
     | Exp MINUS Exp  { Minus($1, $3, $2) }
-    | Exp MUL   Exp  { Times($1, $3, $2) }      // added by Christian
-    | Exp DIV   Exp  { Divide($1, $3, $2) }     // added by Christian
+    | Exp MUL   Exp  { Times($1, $3, $2) }      // Christian
+    | Exp DIV   Exp  { Divide($1, $3, $2) }     // Christian
+    | NEG Exp        { Negate($2, $1)}          // Christian
+    | NOT Exp        { Not($2, $1)}             // Christian
+    | Exp OR Exp     { Or($1, $3, $2) }         // Christian
+    | Exp AND Exp    { And($1, $3, $2) }        // Christian
     | Exp DEQ   Exp  { Equal($1, $3, $2) }
     | Exp LTH   Exp  { Less ($1, $3, $2) }
     | IF Exp THEN Exp ELSE Exp %prec ifprec
