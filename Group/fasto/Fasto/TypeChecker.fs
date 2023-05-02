@@ -261,11 +261,13 @@ and checkExp  (ftab : FunTable)
             match arr_type with
               | Array t -> t
               | _ -> reportTypeWrongKind "second argument of map" "array" arr_type pos
+        printfn "elem_type = %A" elem_type
         let (f', f_res_type, f_arg_type) =
             match checkFunArg ftab vtab pos f with
               | (f', res, [a1]) -> (f', res, a1)
               | (_, res, args) ->
                    reportArityWrong "first argument of map" 1 (args,res) pos
+        printfn "f' = %A\nf_res_type = %A\n f_arg_type = %A" f' f_res_type f_arg_type
         if elem_type <> f_arg_type then
           reportTypesDifferent "function-argument and array-element types in map"
                                f_arg_type elem_type pos
@@ -308,7 +310,7 @@ and checkExp  (ftab : FunTable)
         - assuming `a` is of type `t` the result type
           of replicate is `[t]`
     *)
-    | Replicate (_, _, _, _) ->
+    | Replicate (n, a, t, pos) ->
         failwith "Unimplemented type check of replicate"
 
     (* TODO project task 2: Hint for `filter(f, arr)`

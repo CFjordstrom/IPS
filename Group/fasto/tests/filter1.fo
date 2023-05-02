@@ -1,0 +1,5 @@
+fun bool gefive(int n) = 5 < n
+
+fun [int] main() =
+  let arr = iota(10) in
+  filter(gefive, arr)

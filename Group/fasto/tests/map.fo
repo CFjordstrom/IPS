@@ -1,0 +1,6 @@
+fun bool xd(int x) = 
+    x==x
+
+fun [bool] main() =
+  let arr = iota(10) in
+  (map(xd, arr))
