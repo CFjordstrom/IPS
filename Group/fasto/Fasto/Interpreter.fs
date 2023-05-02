@@ -289,8 +289,15 @@ let rec evalExp (e : UntypedExp, vtab : VarTable, ftab : FunTable) : Value =
          the value of `a`; otherwise raise an error (containing
          a meaningful message).
   *)
-  | Replicate (_, _, _, _) ->
-        failwith "Unimplemented interpretation of replicate"
+  | Replicate (n, a, _, pos) ->
+        let l = evalExp(n, vtab, ftab)
+        let elm = evalExp(a, vtab, ftab)
+        match l with
+          | IntVal len -> 
+              if len >= 0 then ArrayVal (List.replicate len elm, valueType elm)
+              else raise(MyError("first operand of replicate has to be >= 0", pos))
+          | _ -> reportWrongType "argument of \"replicate\"" Int l pos
+
 
   (* TODO project task 2: `filter(p, arr)`
        pattern match the implementation of map:

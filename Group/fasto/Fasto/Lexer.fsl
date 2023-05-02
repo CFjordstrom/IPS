@@ -72,8 +72,10 @@ let keyword (s, pos) =
        | "reduce"       -> Parser.REDUCE pos
        | "read"         -> Parser.READ pos
        | "write"        -> Parser.WRITE pos
+       | "replicate"    -> Parser.REPLICATE pos
+       | "filter"       -> Parser.FILTER pos
+       | "scan"         -> Parser.SCAN pos
        | _              -> Parser.ID (s, pos)
-
 }
 
 rule Token = parse
@@ -110,6 +112,7 @@ rule Token = parse
   | '~'                   { Parser.NEG    (getPos lexbuf) }   // Christian
   | "&&"                  { Parser.AND    (getPos lexbuf) }   // Christian
   | "||"                  { Parser.OR     (getPos lexbuf) }   // Christian
+  | ';'                   { Parser.SEMICOLON (getPos lexbuf) }
   | "=>"                  { Parser.ARROW  (getPos lexbuf) }
   | "=="                  { Parser.DEQ    (getPos lexbuf) }
   | '='                   { Parser.EQ     (getPos lexbuf) }

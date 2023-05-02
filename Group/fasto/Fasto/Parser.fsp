@@ -42,22 +42,21 @@ let parse_error_rich =
 %token <bool * Position> BOOLLIT           // Christian
 %token <Position> IF THEN ELSE LET IN EOF
 %token <Position> INT CHAR BOOL
-%token <Position> PLUS MINUS LESS
-%token <Position> MUL DIV                  // Christian
-%token <Position> NEG NOT                  // Christian
-%token <Position> AND
-%token <Position> OR
+%token <Position> PLUS MINUS LESS MUL DIV
 %token <Position> DEQ LTH EQ MAP REDUCE IOTA ARROW
 %token <Position> FUN FN COMMA SEMICOLON READ WRITE
+%token <Position> REPLICATE FILTER SCAN
 %token <Position> LPAR RPAR LBRACKET RBRACKET LCURLY RCURLY
+%token <Position> AND OR NOT NEG
 
 %nonassoc ifprec letprec
+%left OR
+%left AND
+%nonassoc NOT
 %left DEQ LTH
 %left PLUS MINUS
-%left MUL DIV                            // Christian
-%left AND OR                             // Christian
-
-%right NEG NOT                           // Christian - mby change?
+%left MUL DIV
+%left NEG
 
 %start Prog
 %type <AbSyn.UntypedProg> Prog
@@ -68,7 +67,6 @@ let parse_error_rich =
 %type <AbSyn.UntypedExp list> Exps
 %type <AbSyn.UntypedFunArg> FunArg
 // TODO: Task 1(b): add any new nonterminals here
-
 %%
 
 Prog :    FunDecs EOF   { $1 }
@@ -95,7 +93,36 @@ Params : Type ID COMMA Params
        | Type ID       { Param (fst $2, $1) :: [] }
 ;
 
+// ID :: string * Position
+// EQ :: Position
+// Exp :: Exp<'T>
+// Dec :: string * Exp<'T> * Position
+// VarDeq = Deq<'T> :: string * Exp<'T> * Position
+//VarDeq : ID EQ Exp { Dec (fst $1, $3, $2) }
+//;
 
+// Semi :: 
+//Semi : SEMICOLON VarDeq Semi { $2, $3 }
+//     | VarDeq IN Exp { $1, $3 }
+//;
+
+//LetBody : VarDeq Semi {$1, $2}
+//        | VarDeq IN Exp { $1, $3 }   
+//;
+// Let :: Dec<'T> * Exp<'T> * Position
+
+
+// Deq<'T> :: string * Exp<'T> * Position
+
+//Decl : ID EQ Exp { Dec (fst $1, $3, $2) }
+
+//Decls : SEMICOLON Decl Decls { $2 :: $3 }
+//      | SEMICOLON Decl       { $2 :: [] }
+
+Assign : ID EQ Exp {}
+       | Assign SEMICOLON Assign {}
+       | Assign IN Assign {}
+;
 
 ///////////////////////////////////////////////////////
 // TODO: project tasks 1,2,4: 
@@ -111,14 +138,14 @@ Exp : NUM            { Constant (IntVal (fst $1), snd $1) }
                      { ArrayLit ($2, (), $1) }
     | Exp PLUS  Exp  { Plus ($1, $3, $2) }
     | Exp MINUS Exp  { Minus($1, $3, $2) }
-    | Exp MUL   Exp  { Times($1, $3, $2) }      // Christian
-    | Exp DIV   Exp  { Divide($1, $3, $2) }     // Christian
+    | Exp MUL Exp    { Times($1, $3, $2) }      // Christian
+    | Exp DIV Exp    { Divide($1, $3, $2) }     // Christian
     | NEG Exp        { Negate($2, $1)}          // Christian
     | NOT Exp        { Not($2, $1)}             // Christian
     | Exp OR Exp     { Or($1, $3, $2) }         // Christian
     | Exp AND Exp    { And($1, $3, $2) }        // Christian
-    | Exp DEQ   Exp  { Equal($1, $3, $2) }
-    | Exp LTH   Exp  { Less ($1, $3, $2) }
+    | Exp DEQ Exp    { Equal($1, $3, $2) }
+    | Exp LTH Exp    { Less ($1, $3, $2) }
     | IF Exp THEN Exp ELSE Exp %prec ifprec
                      { If ($2, $4, $6, $1) }
     | ID LPAR Exps RPAR
@@ -135,11 +162,17 @@ Exp : NUM            { Constant (IntVal (fst $1), snd $1) }
     | REDUCE LPAR FunArg COMMA Exp COMMA Exp RPAR
                      { Reduce ($3, $5, $7, (), $1) }
     | LPAR Exp RPAR  { $2 }
+
+    | REPLICATE LPAR Exp COMMA Exp RPAR
+                     { Replicate ($3, $5, (), $1) }
+
+    
     // TODO: task 1(b): replace this with a more general production
+    // Let :: Dec<'T> * Exp<'T> * Position
+    //| LET Decls IN Exp %prec letprec { Let ($2, $4, $1) }
     | LET ID EQ Exp IN Exp %prec letprec
                      { Let (Dec (fst $2, $4, $3), $6, $1) }
-    | ID LBRACKET Exp RBRACKET
-                     { Index (fst $1, $3, (), $2) }
+    | ID LBRACKET Exp RBRACKET { Index (fst $1, $3, (), $2) }
 ;
 
 Exps : Exp COMMA Exps { $1 :: $3 }
