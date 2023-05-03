@@ -1,0 +1,57 @@
+%{
+open FSharp.Text.Parsing
+open AbSyn
+%}
+
+%token <int> INT
+%token <string> VAR
+%token LET IN
+%token LPAR RPAR EQ
+%token SUM PROD MAX ARGMAX TO OF
+%token PLUS MINUS TIMES
+// FIXME: You should declare tokens for:
+//   + Operators
+//   + Keywords
+// The token for identifier (variable name) is
+//     already provided ('VAR')
+%token EOF
+
+// FIXME: Add precedence rules here.
+
+%nonassoc letprec
+%right sumprec prodprec maxprec argmaxprec
+%left PLUS MINUS 
+%left TIMES
+
+%start Prog
+%type <AbSyn.EXP> Prog
+%type <AbSyn.EXP> Exp
+
+%%
+
+Prog : Exp EOF { $1 }
+;
+
+Exp : INT            { CONSTANT (AbSyn.INT $1) }
+    | VAR            { VARIABLE $1 }
+    | LPAR Exp RPAR  { $2 }
+// FIXME: You should implement parsing for:
+//   + infix opeators
+//   + let ... = ... in ...
+//   + sum ... = ... to ... of ...  [and likewise for prod, ...]
+    | Exp PLUS Exp  { OPERATE (BPLUS, $1, $3)}
+    | Exp MINUS Exp { OPERATE (BMINUS, $1, $3)}
+    | Exp TIMES Exp { OPERATE (BTIMES, $1, $3)}
+    | LET VAR EQ Exp IN Exp %prec letprec
+                    { LET_IN ($2, $4, $6) }
+    | SUM VAR EQ Exp TO Exp OF Exp %prec sumprec
+                    { OVER (RSUM, $2, $4, $6, $8) }
+    | PROD VAR EQ Exp TO Exp OF Exp %prec prodprec
+                    { OVER (RPROD, $2, $4, $6, $8) }
+    | MAX VAR EQ Exp TO Exp OF Exp %prec maxprec
+                    { OVER (RMAX, $2, $4, $6, $8) }
+    | ARGMAX VAR EQ Exp TO Exp OF Exp %prec argmaxprec
+                    { OVER (RARGMAX, $2, $4, $6, $8) }
+;
+
+%%

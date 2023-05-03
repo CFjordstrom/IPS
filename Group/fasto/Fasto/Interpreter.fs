@@ -61,6 +61,11 @@ let rec typeMatch (tpval : Type * Value) : bool =
         (t = tp) && (List.map (fun value -> typeMatch (t, value)) vals |> List.fold (&&) true)
       | (_, _) -> false
 
+let extractBool (bool : Value) : bool =
+  match bool with
+    | BoolVal b -> b
+    | _ -> failwith "idk bad solution"
+
 let reportBadType (str : string)
                   (want : string)
                   (v    : Value)
@@ -95,7 +100,6 @@ let rec bindParams (fargs : Param list)
                             fatp v pcall
   | (_, _) -> raise (MyError("Number of formal and actual params do not match in call to "+fid,
                              pcall))
-
 
 (* Interpreter for Fasto expressions:
     1. vtab holds bindings between variable names and
@@ -314,7 +318,7 @@ let rec evalExp (e : UntypedExp, vtab : VarTable, ftab : FunTable) : Value =
               let arr = evalExp(arrexp, vtab, ftab)
               match arr with
                 | ArrayVal (lst, tp1) -> 
-                    let flst = List.filter (fun x -> match evalFunArg (p, vtab, ftab, pos, [x]) with BoolVal b -> b) lst
+                    let flst = List.filter (fun x ->  extractBool (evalFunArg (p, vtab, ftab, pos, [x]))) lst
                     ArrayVal (flst, tp1)
                 | _ -> reportNonArray "2nd argument of \"filter\"" arr pos
           | _ -> raise (MyError("1st argument of \"filter\" must be a function that returns a bool", pos))
