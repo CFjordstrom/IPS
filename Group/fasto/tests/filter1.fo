@@ -1,5 +1,9 @@
 fun bool gefive(int n) = 5 < n
 
-fun [int] main() =
+fun int main() =
   let arr = iota(10) in
-  filter(gefive, arr)
+  let x = filter(gefive, arr) in
+  let y1 = write(x[0]) in
+  let y2 = write(x[1]) in
+  let y3 = write(x[2]) in
+  write(x[3])

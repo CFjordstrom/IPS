@@ -327,8 +327,15 @@ let rec evalExp (e : UntypedExp, vtab : VarTable, ftab : FunTable) : Value =
      Implementation similar to reduce, except that it produces an array
      of the same type and length to the input array `arr`.
   *)
-  | Scan (_, _, _, _, _) ->
-        failwith "Unimplemented interpretation of scan"
+  | Scan (farg, ne, arrexp, tp, pos) ->
+        let farg_ret_type = rtpFunArg farg ftab pos
+        let arr  = evalExp(arrexp, vtab, ftab)
+        let nel  = evalExp(ne, vtab, ftab)
+        match arr with
+          | ArrayVal (lst,tp1) ->
+              let slst = (List.scan (fun acc x -> evalFunArg (farg, vtab, ftab, pos, [acc;x])) nel lst) |> List.tail
+              ArrayVal (slst, tp1)
+          | otherwise -> reportNonArray "3rd argument of \"reduce\"" arr pos
 
   | Read (t,p) ->
         let str = Console.ReadLine()

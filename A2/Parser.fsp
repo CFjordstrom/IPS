@@ -19,7 +19,7 @@ open AbSyn
 // FIXME: Add precedence rules here.
 
 %nonassoc letprec
-%right sumprec prodprec maxprec argmaxprec
+%nonassoc sumprec prodprec maxprec argmaxprec
 %left PLUS MINUS 
 %left TIMES
 

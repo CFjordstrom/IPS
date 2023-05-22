@@ -35,7 +35,7 @@ rule Token = parse
   | '*' { Parser.TIMES }
   | '=' { Parser.EQ}
 
-  | ['a'-'z''A'-'Z']+('_'['a'-'z''A'-'Z''0'-'9']+['_''a'-'z''A'-'Z''0'-'9']*)*+ 
+  | ['a'-'z''A'-'Z']+('_'['a'-'z''A'-'Z''_''0'-'9']*)* 
       { keyword (Encoding.UTF8.GetString lexbuf.Lexeme) }
 
     (* FIXME: You should implement lexing for:

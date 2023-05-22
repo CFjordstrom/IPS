@@ -596,9 +596,64 @@ let rec compileExp  (e      : TypedExp)
         If `n` is less than `0` then remember to terminate the program with
         an error -- see implementation of `iota`.
   *)
-  | Replicate (_, _, _, _) ->
-      failwith "Unimplemented code generation of replicate"
 
+  (*
+  Replicate(n, a) =
+  char* result_array = malloc(n * 4);
+  int i = 0;
+  if (n < 0) {error()};
+  while (i < n) {
+    result_array[i] = a;
+    i++;
+  }
+
+  *)
+  | Replicate (n, a, elem_type, pos) ->
+      let size_reg = newReg "size"    // size_reg = n
+      let elem_reg = newReg "elem"    // elem_reg = a
+
+      let get_size = compileExp n vtable size_reg
+      let get_elem = compileExp a vtable elem_reg
+
+      let safe_lab = newLab "safe"
+      let check_size =  [ BGE (size_reg, Rzero, safe_lab)  // if n >= continue
+                        ; LI (Ra0, fst pos)                // else error
+                        ; LA (Ra1, "m.BadSize")
+                        ; J "p.RuntimeError"
+                        ; LABEL (safe_lab)
+                        ]
+      
+      let addr_reg = newReg "addrg"     
+      let i_reg = newReg "i"
+      let init_regs = [ ADDI (addr_reg, place, 4)
+                      ; MV (i_reg, Rzero)
+                      ]
+      
+      let loop_beg = newLab "loop_beg"
+      let loop_end = newLab "loop_end"
+      let loop_header = [ LABEL (loop_beg)
+                        ; BGE (i_reg, size_reg, loop_end)
+                        ]
+      let size = getElemSize elem_type
+      
+      // replicate is 'arr[i] = elem
+      let loop_replicate =  [ Store size (elem_reg, addr_reg, 0)
+                            ; ADDI (addr_reg, addr_reg, elemSizeToInt size)
+                            ]
+
+      let loop_footer = [ ADDI (i_reg, i_reg, 1)
+                        ; J loop_beg
+                        ; LABEL loop_end
+                        ]
+
+      get_size
+      @ get_elem
+      @ dynalloc (size_reg, place, elem_type)
+      @ check_size
+      @ init_regs
+      @ loop_header
+      @ loop_replicate
+      @ loop_footer
   (* TODO project task 2: see also the comment to replicate.
      (a) `filter(f, arr)`:  has some similarity with the implementation of map.
      (b) Use `applyFunArg` to call `f(a)` in a loop, for every element `a` of `arr`.
@@ -614,8 +669,63 @@ let rec compileExp  (e      : TypedExp)
          counter computed in step (c). You do this of course with a
          `SW(counter_reg, place, 0)` instruction.
   *)
-  | Filter (_, _, _, _) ->
-      failwith "Unimplemented code generation of filter"
+
+  | Filter (farg, arr_exp, elem_type, pos) ->
+      let size_reg = newReg "size" (* size of input array *)
+      let arr_reg  = newReg "arr"  (* address of array *)
+      let elem_reg = newReg "elem" (* address of current element *)
+      let res_reg = newReg "res"   (* stores function call result *)
+
+      let arr_code = compileExp arr_exp vtable arr_reg
+
+      let get_size = [ LW (size_reg, arr_reg, 0) ]
+      
+      let addr_reg = newReg "addrg" (* address of element in new array *)
+      let i_reg = newReg "i"
+      let counter_reg = newReg "counter"
+      let init_regs = [ ADDI (addr_reg, place, 4)
+                      ; MV (i_reg, Rzero)
+                      ; MV (counter_reg, Rzero)
+                      ; ADDI (elem_reg, arr_reg, 4)
+                      ]
+
+      let loop_beg = newLab "loop_beg"
+      let loop_end = newLab "loop_end"
+      let loop_header = [ LABEL (loop_beg)
+                        ; BGE (i_reg, size_reg, loop_end)
+                        ]
+      
+      let tmp_reg = newReg "tmp_reg"
+      let size = getElemSize elem_type
+      let size_int = elemSizeToInt size
+      let false_lab = newLab "false"
+      let loop_filter = [ Load size (res_reg, elem_reg, 0) ]
+                        @ applyFunArg(farg, [res_reg], vtable, res_reg, pos)
+                        @
+                        [ BEQ (res_reg, Rzero, false_lab)
+                        ; Load size (tmp_reg, elem_reg, 0)
+                        ; Store size (tmp_reg, addr_reg, 0)
+                        ; ADDI (addr_reg, addr_reg, size_int)
+                        ; ADDI (counter_reg, counter_reg, 1)
+                        ]
+      
+      let loop_footer = [ LABEL false_lab
+                        ; ADDI (i_reg, i_reg, 1)
+                        ; ADDI (elem_reg, elem_reg, size_int)
+                        ; J loop_beg
+                        ; LABEL loop_end
+                        ]
+
+      let update_array_size = [ Store size (counter_reg, place, 0) ]
+
+      arr_code
+      @ get_size
+      @ dynalloc (size_reg, place, elem_type)
+      @ init_regs
+      @ loop_header
+      @ loop_filter
+      @ loop_footer
+      @ update_array_size
 
   (* TODO project task 2: see also the comment to replicate.
      `scan(f, ne, arr)`: you can inspire yourself from the implementation of
@@ -624,8 +734,61 @@ let rec compileExp  (e      : TypedExp)
         the current location of the result iterator at every iteration of
         the loop.
   *)
-  | Scan (_, _, _, _, _) ->
-      failwith "Unimplemented code generation of scan"
+  | Scan (binop, acc_exp, arr_exp, tp, pos) ->
+      let arr_reg  = newReg "arr"   (* address of array *)
+      let size_reg = newReg "size"  (* size of input array *)
+      let i_reg    = newReg "ind_var"   (* loop counter *)
+      let tmp_reg  = newReg "tmp"   (* several purposes *)
+      let addr_reg = newReg "addr_reg"  // address of element in new array
+
+      let arr_code = compileExp arr_exp vtable arr_reg
+
+      let header1 = [ LW(size_reg, arr_reg, 0) ]
+
+      let init_regs = [ ADDI (addr_reg, place, 4) 
+                      ; ADDI (arr_reg, arr_reg, 4)
+                      ; MV (i_reg, Rzero)
+                      ]
+
+      (* Compile initial value into place (will be updated below) *)
+      let acc_reg = newReg "acc_reg"
+      let acc_code = compileExp acc_exp vtable acc_reg
+
+      let loop_beg = newLab "loop_beg"
+      let loop_end = newLab "loop_end"
+
+      let loop_header = [ LABEL loop_beg
+                      ; BGE (i_reg, size_reg, loop_end)
+                      ]
+
+      let size = getElemSize tp
+      let size_int = elemSizeToInt size
+
+      let load_code = [ Load size (tmp_reg, arr_reg, 0)
+                      ; ADDI (arr_reg, arr_reg, size_int)
+                      ]
+
+      let apply_code = applyFunArg(binop, [acc_reg; tmp_reg], vtable, acc_reg, pos)
+
+      let store_code =  [ Store size (acc_reg, addr_reg, 0)
+                        ; ADDI (addr_reg, addr_reg, size_int)
+                        ]
+      
+      let loop_footer = [ ADDI (i_reg, i_reg, 1)
+                        ; J loop_beg
+                        ; LABEL loop_end
+                        ]
+
+      arr_code
+      @ header1
+      @ dynalloc (size_reg, place, tp)
+      @ init_regs
+      @ acc_code
+      @ loop_header
+      @ load_code
+      @ apply_code
+      @ store_code
+      @ loop_footer
 
 and applyFunArg ( ff     : TypedFunArg
                 , args   : reg list
