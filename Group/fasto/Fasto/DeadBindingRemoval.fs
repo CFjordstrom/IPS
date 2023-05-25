@@ -68,7 +68,8 @@ let rec removeDeadBindingsInExp (e : TypedExp) : (bool * DBRtab * TypedExp) =
                         you need to record it in a new symbol table.
                   - 3rd element of the tuple: should be the optimised expression.
             *)
-            (false, recordUse name (SymTab.empty()), Var (name, pos))
+            let new_vtable = recordUse name (SymTab.empty())
+            (false, new_vtable, Var (name, pos))
         | Plus (x, y, pos) ->
             let (xios, xuses, x') = removeDeadBindingsInExp x
             let (yios, yuses, y') = removeDeadBindingsInExp y
@@ -118,8 +119,9 @@ let rec removeDeadBindingsInExp (e : TypedExp) : (bool * DBRtab * TypedExp) =
                         expression `e` and to propagate its results (in addition
                         to recording the use of `name`).
             *)
-            failwith "Unimplemented removeDeadBindingsInExp for Index"
-
+            let (e_io, e_uses, e') = removeDeadBindingsInExp e
+            let new_vtable = recordUse name e_uses
+            (e_io, new_vtable, Index(name, e', t, pos))
         | Let (Dec (name, e, decpos), body, pos) ->
             (* Task 3, Hints for the `Let` case:
                   - recursively process the `e` and `body` subexpressions
@@ -144,7 +146,14 @@ let rec removeDeadBindingsInExp (e : TypedExp) : (bool * DBRtab * TypedExp) =
                     Let-expression.
 
             *)
-            failwith "Unimplemented removeDeadBindingsInExp for Let"
+            let (body_io, body_uses, body') = removeDeadBindingsInExp body
+            let (e_io, e_uses, e') = removeDeadBindingsInExp body
+            if (isUsed name body_uses || e_io) then
+                let body_uses_no_name = SymTab.remove name body_uses
+                let vtab = SymTab.combine body_uses_no_name e_uses
+                (e_io || body_io, vtab, Let (Dec (name, e', decpos), body', pos))
+            else
+                (body_io, body_uses, body')
         | Iota (e, pos) ->
             let (io, uses, e') = removeDeadBindingsInExp e
             (io,

@@ -743,38 +743,38 @@ let rec compileExp  (e      : TypedExp)
 
       let arr_code = compileExp arr_exp vtable arr_reg
 
-      let header1 = [ LW(size_reg, arr_reg, 0) ]
+      let header1 = [ LW(size_reg, arr_reg, 0) ]  // size_reg = len(arr)
 
-      let init_regs = [ ADDI (addr_reg, place, 4) 
-                      ; ADDI (arr_reg, arr_reg, 4)
-                      ; MV (i_reg, Rzero)
+      let init_regs = [ ADDI (addr_reg, place, 4)   // set addr_reg to point to first element of result array
+                      ; ADDI (arr_reg, arr_reg, 4)  // set arr_reg to point to first element if input array
+                      ; MV (i_reg, Rzero)           // i = 0
                       ]
 
       (* Compile initial value into place (will be updated below) *)
       let acc_reg = newReg "acc_reg"
-      let acc_code = compileExp acc_exp vtable acc_reg
+      let acc_code = compileExp acc_exp vtable acc_reg 
 
       let loop_beg = newLab "loop_beg"
       let loop_end = newLab "loop_end"
 
-      let loop_header = [ LABEL loop_beg
-                      ; BGE (i_reg, size_reg, loop_end)
+      let loop_header = [ LABEL loop_beg            
+                      ; BGE (i_reg, size_reg, loop_end) // if i >= n then end
                       ]
 
       let size = getElemSize tp
       let size_int = elemSizeToInt size
 
-      let load_code = [ Load size (tmp_reg, arr_reg, 0)
-                      ; ADDI (arr_reg, arr_reg, size_int)
+      let load_code = [ Load size (tmp_reg, arr_reg, 0)   // tmp_reg = current element
+                      ; ADDI (arr_reg, arr_reg, size_int) // arr_reg points to next element
                       ]
 
-      let apply_code = applyFunArg(binop, [acc_reg; tmp_reg], vtable, acc_reg, pos)
+      let apply_code = applyFunArg(binop, [acc_reg; tmp_reg], vtable, acc_reg, pos) // acc_reg = CALL(acc_reg, current element)
 
-      let store_code =  [ Store size (acc_reg, addr_reg, 0)
-                        ; ADDI (addr_reg, addr_reg, size_int)
+      let store_code =  [ Store size (acc_reg, addr_reg, 0)   // result_array[i] = acc_reg
+                        ; ADDI (addr_reg, addr_reg, size_int) // addr_reg points to next element
                         ]
       
-      let loop_footer = [ ADDI (i_reg, i_reg, 1)
+      let loop_footer = [ ADDI (i_reg, i_reg, 1)    // i++
                         ; J loop_beg
                         ; LABEL loop_end
                         ]

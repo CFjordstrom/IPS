@@ -153,9 +153,9 @@ Exp : NUM            { Constant (IntVal (fst $1), snd $1) }
 ;
 
 // Exp -> LET VarDec IN Exp
-// Exp -> LET Vardec ; SemiExp
+// Exp -> LET Vardec SEMICOLON SemiExp
 
-// SemiExp -> VarDec ; SemiExp
+// SemiExp -> VarDec SEMICOLON SemiExp
 // SemiExp -> VarDec IN Exp
 
 // VarDec -> ID = Exp
