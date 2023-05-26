@@ -147,7 +147,7 @@ let rec removeDeadBindingsInExp (e : TypedExp) : (bool * DBRtab * TypedExp) =
 
             *)
             let (body_io, body_uses, body') = removeDeadBindingsInExp body
-            let (e_io, e_uses, e') = removeDeadBindingsInExp body
+            let (e_io, e_uses, e') = removeDeadBindingsInExp e
             if (isUsed name body_uses || e_io) then
                 let body_uses_no_name = SymTab.remove name body_uses
                 let vtab = SymTab.combine body_uses_no_name e_uses
