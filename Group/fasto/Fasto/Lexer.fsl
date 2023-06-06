@@ -63,7 +63,7 @@ let keyword (s, pos) =
        | "fun"          -> Parser.FUN pos
        | "fn"           -> Parser.FN pos
        | "true"         -> Parser.BOOLLIT(true, pos)    // Christian
-       | "false"        -> Parser.BOOLLIT(false, pos)  // Christian
+       | "false"        -> Parser.BOOLLIT(false, pos)   // Christian
        | "not"          -> Parser.NOT pos               // Christian
 
 (* specials: *)
@@ -72,9 +72,9 @@ let keyword (s, pos) =
        | "reduce"       -> Parser.REDUCE pos
        | "read"         -> Parser.READ pos
        | "write"        -> Parser.WRITE pos
-       | "replicate"    -> Parser.REPLICATE pos
-       | "filter"       -> Parser.FILTER pos
-       | "scan"         -> Parser.SCAN pos
+       | "replicate"    -> Parser.REPLICATE pos         // Christian
+       | "filter"       -> Parser.FILTER pos            // Christian
+       | "scan"         -> Parser.SCAN pos              // Christian
        | _              -> Parser.ID (s, pos)
 }
 
@@ -107,12 +107,12 @@ rule Token = parse
                           }
   | '+'                   { Parser.PLUS   (getPos lexbuf) }
   | '-'                   { Parser.MINUS  (getPos lexbuf) }
-  | '*'                   { Parser.MUL    (getPos lexbuf) }   // Christian
-  | '/'                   { Parser.DIV    (getPos lexbuf) }   // Christian
-  | '~'                   { Parser.NEG    (getPos lexbuf) }   // Christian
-  | "&&"                  { Parser.AND    (getPos lexbuf) }   // Christian
-  | "||"                  { Parser.OR     (getPos lexbuf) }   // Christian
-  | ';'                   { Parser.SEMICOLON (getPos lexbuf) }
+  | '*'                   { Parser.MUL    (getPos lexbuf) }     // Christian
+  | '/'                   { Parser.DIV    (getPos lexbuf) }     // Christian
+  | '~'                   { Parser.NEG    (getPos lexbuf) }     // Christian
+  | "&&"                  { Parser.AND    (getPos lexbuf) }     // Christian
+  | "||"                  { Parser.OR     (getPos lexbuf) }     // Christian
+  | ';'                   { Parser.SEMICOLON (getPos lexbuf) }  // Christian
   | "=>"                  { Parser.ARROW  (getPos lexbuf) }
   | "=="                  { Parser.DEQ    (getPos lexbuf) }
   | '='                   { Parser.EQ     (getPos lexbuf) }

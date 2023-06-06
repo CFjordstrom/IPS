@@ -137,27 +137,27 @@ and checkExp  (ftab : FunTable)
         Implement by pattern matching Plus/Minus above.
         See `AbSyn.fs` for the expression constructors of `Times`, ...
     *)
-    | Times (e1, e2, pos) ->      // added by Christian
+    | Times (e1, e2, pos) ->      // Christian
         let (e1_dec, e2_dec) = checkBinOp ftab vtab (pos, Int, e1, e2)
         (Int, Times (e1_dec, e2_dec, pos))
 
-    | Divide (e1, e2, pos) ->     // added by Christian
+    | Divide (e1, e2, pos) ->     // Christian
         let (e1_dec, e2_dec) = checkBinOp ftab vtab (pos, Int, e1, e2)
         (Int, Divide (e1_dec, e2_dec, pos))
 
-    | And (e1, e2, pos) ->
+    | And (e1, e2, pos) ->        // Christian
         let (e1_dec, e2_dec) = checkBinOp ftab vtab (pos, Bool, e1, e2)
         (Bool, And (e1_dec, e2_dec, pos))
 
-    | Or (e1, e2, pos) ->
+    | Or (e1, e2, pos) ->         // Christian
         let (e1_dec, e2_dec) = checkBinOp ftab vtab (pos, Bool, e1, e2)
         (Bool, Or (e1_dec, e2_dec, pos))
 
-    | Not (e, pos) ->   // Christian
+    | Not (e, pos) ->             // Christian
         let e_dec = checkOp ftab vtab (pos, Bool, e)
         (Bool, Not(e_dec, pos))
 
-    | Negate (e, pos) ->  // Christian
+    | Negate (e, pos) ->          // Christian
         let e_dec = checkOp ftab vtab (pos, Int, e)
         (Int, Negate(e_dec, pos))
 
@@ -308,7 +308,7 @@ and checkExp  (ftab : FunTable)
         - assuming `a` is of type `t` the result type
           of replicate is `[t]`
     *)
-    | Replicate (n, a, t, pos) ->
+    | Replicate (n, a, t, pos) ->     // Christian
         let (n_type, n_dec) = checkExp ftab vtab n
         let (a_type, a_dec) = checkExp ftab vtab a
         match n_type with
@@ -324,7 +324,7 @@ and checkExp  (ftab : FunTable)
             - `arr` should be of type `[ta]`
             - the result of filter should have type `[tb]`
     *)
-    | Filter (f, arr_exp, t, pos) ->
+    | Filter (f, arr_exp, t, pos) ->    // Christian
         let (arr_type, arr_exp_dec) = checkExp ftab vtab arr_exp
         let elem_type =
           match arr_type with
@@ -347,7 +347,7 @@ and checkExp  (ftab : FunTable)
               scan's return type is the same as the type of `arr`,
               while reduce's return type is that of an element of `arr`).
     *)
-    | Scan (f, e_exp, arr_exp, t, pos) ->
+    | Scan (f, e_exp, arr_exp, t, pos) ->   // Christian
         let (e_type  , e_dec  ) = checkExp ftab vtab e_exp
         let (arr_type, arr_dec) = checkExp ftab vtab arr_exp
         let elem_type =

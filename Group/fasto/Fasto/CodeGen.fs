@@ -239,14 +239,14 @@ let rec compileExp  (e      : TypedExp)
      version, but remember to come back and clean it up later.
      `Not` and `Negate` are simpler; you can use `XORI` for `Not`
   *)
-  | Times (e1, e2, pos) ->      // added by Christian
+  | Times (e1, e2, pos) ->      // Christian
       let t1 = newReg "mul_L"
       let t2 = newReg "mul_R"
       let code1 = compileExp e1 vtable t1
       let code2 = compileExp e2 vtable t2
       code1 @ code2 @ [MUL (place,t1,t2)]
 
-  | Divide (e1, e2, pos) ->    // added by Christian
+  | Divide (e1, e2, pos) ->    // Christian
       let t1 = newReg "div_L"
       let t2 = newReg "div_R"
       let code1 = compileExp e1 vtable t1
@@ -365,14 +365,14 @@ let rec compileExp  (e      : TypedExp)
         in `e1 || e2` if the execution of `e1` will evaluate to `true` then
         the code of `e2` must not be executed. Similarly for `And` (&&).
   *)
-  | And (e1, e2, pos) ->
+  | And (e1, e2, pos) -> // Christian
       let t1 = newReg "and_L"
       let t2 = newReg "and_R"
       let code1 = compileExp e1 vtable t1
       let code2 = compileExp e2 vtable t2
 
       let end_lab = newLab "end"
-      let check_false =   [ LI (place, 0)             // set return = false
+      let check_false =   [ LI (place, 0)             // retval = false
                           ; BEQ (t1, Rzero, end_lab)  // if e1 == false then end
                           ; LI (place, 1)             // e1 == true so return = true
                           ]
@@ -385,7 +385,7 @@ let rec compileExp  (e      : TypedExp)
 
       code1 @ check_false @ code2 @ check_false2 @ goto_end
 
-  | Or (e1, e2, pos) ->
+  | Or (e1, e2, pos) -> // Christian
       let t1 = newReg "or_L"
       let t2 = newReg "or_R"
       let code1 = compileExp e1 vtable t1
@@ -608,12 +608,12 @@ let rec compileExp  (e      : TypedExp)
   }
 
   *)
-  | Replicate (n, a, elem_type, pos) ->
+  | Replicate (n, a, elem_type, pos) -> // Christian
       let size_reg = newReg "size"    // size_reg = n
       let elem_reg = newReg "elem"    // elem_reg = a
 
-      let get_size = compileExp n vtable size_reg
-      let get_elem = compileExp a vtable elem_reg
+      let get_size = compileExp n vtable size_reg // size_reg = n
+      let get_elem = compileExp a vtable elem_reg // elem_reg = a
 
       let safe_lab = newLab "safe"
       let check_size =  [ BGE (size_reg, Rzero, safe_lab)  // if n >= continue
@@ -625,24 +625,24 @@ let rec compileExp  (e      : TypedExp)
       
       let addr_reg = newReg "addrg"     
       let i_reg = newReg "i"
-      let init_regs = [ ADDI (addr_reg, place, 4)
-                      ; MV (i_reg, Rzero)
+      let init_regs = [ ADDI (addr_reg, place, 4) // set addr_reg to point to first element of result array
+                      ; MV (i_reg, Rzero) // i = 0
                       ]
       
       let loop_beg = newLab "loop_beg"
       let loop_end = newLab "loop_end"
       let loop_header = [ LABEL (loop_beg)
-                        ; BGE (i_reg, size_reg, loop_end)
+                        ; BGE (i_reg, size_reg, loop_end) // if i >= n then end
                         ]
       let size = getElemSize elem_type
       
       // replicate is 'arr[i] = elem
-      let loop_replicate =  [ Store size (elem_reg, addr_reg, 0)
-                            ; ADDI (addr_reg, addr_reg, elemSizeToInt size)
+      let loop_replicate =  [ Store size (elem_reg, addr_reg, 0)  // result_array[i] = a
+                            ; ADDI (addr_reg, addr_reg, elemSizeToInt size) // addr_reg points to next element
                             ]
 
-      let loop_footer = [ ADDI (i_reg, i_reg, 1)
-                        ; J loop_beg
+      let loop_footer = [ ADDI (i_reg, i_reg, 1)  // i++
+                        ; J loop_beg              // goto beginning of loop
                         ; LABEL loop_end
                         ]
 
@@ -670,7 +670,7 @@ let rec compileExp  (e      : TypedExp)
          `SW(counter_reg, place, 0)` instruction.
   *)
 
-  | Filter (farg, arr_exp, elem_type, pos) ->
+  | Filter (farg, arr_exp, elem_type, pos) -> // Christian
       let size_reg = newReg "size" (* size of input array *)
       let arr_reg  = newReg "arr"  (* address of array *)
       let elem_reg = newReg "elem" (* address of current element *)
@@ -683,36 +683,36 @@ let rec compileExp  (e      : TypedExp)
       let addr_reg = newReg "addrg" (* address of element in new array *)
       let i_reg = newReg "i"
       let counter_reg = newReg "counter"
-      let init_regs = [ ADDI (addr_reg, place, 4)
-                      ; MV (i_reg, Rzero)
-                      ; MV (counter_reg, Rzero)
-                      ; ADDI (elem_reg, arr_reg, 4)
+      let init_regs = [ ADDI (addr_reg, place, 4) // set addr_reg to point to first element of result array
+                      ; MV (i_reg, Rzero) // i = 0
+                      ; MV (counter_reg, Rzero) // j = 0 (register that keeps count of #elements in result array)
+                      ; ADDI (elem_reg, arr_reg, 4) // elem_reg points to first element of input array
                       ]
 
       let loop_beg = newLab "loop_beg"
       let loop_end = newLab "loop_end"
       let loop_header = [ LABEL (loop_beg)
-                        ; BGE (i_reg, size_reg, loop_end)
+                        ; BGE (i_reg, size_reg, loop_end) // if i >= n then end
                         ]
       
       let tmp_reg = newReg "tmp_reg"
       let size = getElemSize elem_type
       let size_int = elemSizeToInt size
       let false_lab = newLab "false"
-      let loop_filter = [ Load size (res_reg, elem_reg, 0) ]
-                        @ applyFunArg(farg, [res_reg], vtable, res_reg, pos)
+      let loop_filter = [ Load size (res_reg, elem_reg, 0) ] // tmp = a[i]
+                        @ applyFunArg(farg, [res_reg], vtable, res_reg, pos) // tmp = f(tmp)
                         @
-                        [ BEQ (res_reg, Rzero, false_lab)
-                        ; Load size (tmp_reg, elem_reg, 0)
-                        ; Store size (tmp_reg, addr_reg, 0)
-                        ; ADDI (addr_reg, addr_reg, size_int)
-                        ; ADDI (counter_reg, counter_reg, 1)
+                        [ BEQ (res_reg, Rzero, false_lab) // if tmp = false goto false
+                        ; Load size (tmp_reg, elem_reg, 0) // tmp2 = a[i]
+                        ; Store size (tmp_reg, addr_reg, 0) // result_array[j] = tmp2
+                        ; ADDI (addr_reg, addr_reg, size_int) // addr_reg points to next element of result array
+                        ; ADDI (counter_reg, counter_reg, 1) // j++
                         ]
       
       let loop_footer = [ LABEL false_lab
-                        ; ADDI (i_reg, i_reg, 1)
-                        ; ADDI (elem_reg, elem_reg, size_int)
-                        ; J loop_beg
+                        ; ADDI (i_reg, i_reg, 1) // i++
+                        ; ADDI (elem_reg, elem_reg, size_int) // elem_reg points to next element of input array
+                        ; J loop_beg // goto beginning of loop
                         ; LABEL loop_end
                         ]
 
@@ -734,7 +734,7 @@ let rec compileExp  (e      : TypedExp)
         the current location of the result iterator at every iteration of
         the loop.
   *)
-  | Scan (binop, acc_exp, arr_exp, tp, pos) ->
+  | Scan (binop, acc_exp, arr_exp, tp, pos) -> // Christian
       let arr_reg  = newReg "arr"   (* address of array *)
       let size_reg = newReg "size"  (* size of input array *)
       let i_reg    = newReg "ind_var"   (* loop counter *)

@@ -1,0 +1,1 @@
+Type error: Type mismatch in first argument of replicate: expected a(n) int type, but got bool at line 4, column 12
